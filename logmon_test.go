@@ -63,13 +63,19 @@ func TestHTTPIngestAndQuery(t *testing.T) {
 
 	// 推一批日志（JSON 格式）
 	body := `{"source":"auth","lines":["INFO login ok","ERROR db connection failed","WARN slow query"]}`
-	resp, _ := http.Post(ts.URL+"/api/log", "application/json", strings.NewReader(body))
+	resp, err := http.Post(ts.URL+"/api/log", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatalf("推送请求失败: %v", err)
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		t.Fatalf("推送状态码 %d", resp.StatusCode)
 	}
 
-	logs, _ := http.Get(ts.URL + "/api/logs")
+	logs, err := http.Get(ts.URL + "/api/logs")
+	if err != nil {
+		t.Fatalf("查询日志请求失败: %v", err)
+	}
 	defer logs.Body.Close()
 	var entries []Entry
 	json.NewDecoder(logs.Body).Decode(&entries)
@@ -77,7 +83,10 @@ func TestHTTPIngestAndQuery(t *testing.T) {
 		t.Fatalf("应收到 3 条, 得到 %d", len(entries))
 	}
 
-	al, _ := http.Get(ts.URL + "/api/alerts")
+	al, err := http.Get(ts.URL + "/api/alerts")
+	if err != nil {
+		t.Fatalf("查询告警请求失败: %v", err)
+	}
 	defer al.Body.Close()
 	var alerts []Alert
 	json.NewDecoder(al.Body).Decode(&alerts)
